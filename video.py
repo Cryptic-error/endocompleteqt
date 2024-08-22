@@ -20,7 +20,7 @@ class LiveMediaDisplay(QtWidgets.QWidget):
         super().__init__()
 
         self.setWindowTitle("Live Media Display")
-        self.setGeometry(100, 100, 640, 560)
+        self.setGeometry(100, 100, 1100, 800)
 
         # Layout
         layout = QtWidgets.QVBoxLayout(self)
@@ -40,8 +40,10 @@ class LiveMediaDisplay(QtWidgets.QWidget):
         # Initialize OpenCV video capture (default to Camera)
         self.cap = cv2.VideoCapture(0)
 
-        # Create a label to display the video frame
+        # Create a label to display the video frame with increased size
         self.label = QtWidgets.QLabel()
+        self.label.setMinimumSize(1000, 700)
+        self.label.setAlignment(QtCore.Qt.AlignCenter) # Set the desired size for the video display
         layout.addWidget(self.label)
 
         # Add a button to capture an image
@@ -57,6 +59,9 @@ class LiveMediaDisplay(QtWidgets.QWidget):
         form_button.setStyleSheet("background-color: grey; color: white;")
         form_button.clicked.connect(self.open_form)
         layout.addWidget(form_button)
+
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+0"), self)
+        shortcut.activated.connect(self.capture_image)
 
         # Start updating the frame
         self.update_frame()
@@ -82,6 +87,8 @@ class LiveMediaDisplay(QtWidgets.QWidget):
             qt_image = pil_to_qt_image(image)  # Convert PIL image to Qt image
             pixmap = QtGui.QPixmap.fromImage(qt_image)
 
+            # Resize pixmap to fit the label size
+            pixmap = pixmap.scaled(self.label.size(), QtCore.Qt.KeepAspectRatio)
             self.label.setPixmap(pixmap)
         else:
             print("Failed to grab frame.")  # Debugging line to indicate frame read failure
@@ -110,6 +117,7 @@ class LiveMediaDisplay(QtWidgets.QWidget):
             self.cap = cv2.VideoCapture(0)
         elif source == "USB Import":
             self.cap = cv2.VideoCapture(1)  # Assuming USB import is the second device
+  # Assuming USB import is the second device
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication([])

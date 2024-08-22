@@ -10,9 +10,9 @@ from fpdf import FPDF
 class EndoscopyForm(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.init_ui()
+      
 
-    def init_ui(self):
+    
         self.setWindowTitle("Endoscopy Form")
         self.setGeometry(100, 100, 1100, 800)
 
@@ -207,7 +207,9 @@ class EndoscopyForm(QtWidgets.QMainWindow):
         self.generate_pdf_btn = QtWidgets.QPushButton("Generate PDF")
         self.generate_pdf_btn.clicked.connect(self.generate_pdf)
         self.scroll_area_layout.addWidget(self.generate_pdf_btn)
-
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.scroll_area.setGeometry(0, 0, self.width(), self.height())
 
     def save_data(self):
         user_name = self.entry_name.text().replace(" ", "_")
@@ -317,7 +319,7 @@ class EndoscopyForm(QtWidgets.QMainWindow):
 
         # Set title
         pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, "Endoscopy Form", 0, 1, 'C')
+        pdf.cell(0, 10, "Endoscopy Report", 0, 1, 'C')
         pdf.ln(10)
 
         # Add header text
@@ -355,38 +357,56 @@ class EndoscopyForm(QtWidgets.QMainWindow):
         col_width = pdf.get_string_width('Comments Procedure:') + 10
 
         for key, value in form_data.items():
+            # Check if adding this content will overflow the page
+            if pdf.get_y() > 270 - 10:  # Adjust the threshold based on your layout needs
+                pdf.add_page()
             pdf.cell(col_width, 10, f"{key}:", border=1, fill=True)
             pdf.cell(0, 10, value, border=1, ln=True)
 
+        # Construct the folder name and path with underscores instead of spaces
+        folder_name = f"{self.entry_name.text().replace(' ', '_')}{self.entry_bill_no.text()}"
+        signature_path = os.path.join('saved_images', folder_name, 'signature.jpg')
+        print(signature_path)
+
         # Add the signature image
-        signature_path = os.path.join('saved_images', 'signature.jpg')
         if os.path.exists(signature_path):
+            # Check if adding this image will overflow the page
+            if pdf.get_y() + 60 > 270:  # Adjust based on the height of the image
+                pdf.add_page()
             pdf.ln(10)  # Add a line break before the image
             pdf.image(signature_path, x=10, y=pdf.get_y(), w=100)
             pdf.ln(60)  # Add some space after the image
 
         # Add the four images
         image_paths = [
-            os.path.join('saved_images', 'picture1.jpg'),
-            os.path.join('saved_images', 'picture2.jpg'),
-            os.path.join('saved_images', 'picture3.jpg'),
-            os.path.join('saved_images', 'picture4.jpg')
+            os.path.join('saved_images', folder_name, 'picture1.jpg'),
+            os.path.join('saved_images', folder_name, 'picture2.jpg'),
+            os.path.join('saved_images', folder_name, 'picture3.jpg'),
+            os.path.join('saved_images', folder_name, 'picture4.jpg')
         ]
 
         for image_path in image_paths:
             if os.path.exists(image_path):
+                # Check if adding this image will overflow the page
+                if pdf.get_y() + 60 > 270:  # Adjust based on the height of the image
+                    pdf.add_page()
                 pdf.ln(10)  # Add a line break before the image
                 pdf.image(image_path, x=10, y=pdf.get_y(), w=100)
-                pdf.ln(60)  # Add some space after each image
+                pdf.ln(150)  # Add some space after each image
 
-        # Save PDF
+        # Save the PDF
+        output_path = os.path.join('saved_pdfs', f"{self.entry_bill_no.text()}.pdf")
+        pdf.output(output_path)
+
+        # Save PDF with a properly formatted file name
         pdf_output_path = os.path.join('saved_pdfs', f"{self.entry_name.text().replace(' ', '_')}_endoscopy_form.pdf")
         os.makedirs(os.path.dirname(pdf_output_path), exist_ok=True)
         pdf.output(pdf_output_path)
         QtWidgets.QMessageBox.information(self, "PDF Generated", f"PDF saved as {pdf_output_path}")
 
 if __name__ == "__main__":
+    import sys
     app = QtWidgets.QApplication([])
     window = EndoscopyForm()
     window.show()
-    app.exec_()
+    sys.exit(app.exec_())
