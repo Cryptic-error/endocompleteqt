@@ -1,9 +1,11 @@
-from PyQt5 import QtWidgets, QtGui , QtCore
+from PyQt5 import QtWidgets, QtGui, QtCore
 from PIL import Image
 import io
-import subprocess
+from video import LiveMediaDisplay  # Assuming this is your custom module
+from form import EndoscopyForm  # Importing FormWindow class
+from fetch import MainWindow  # Importing FetchWindow class
 
-class EndoscopyForm(QtWidgets.QWidget):
+class Homewindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
 
@@ -68,21 +70,20 @@ class EndoscopyForm(QtWidgets.QWidget):
         # Buttons
         button_layout = QtWidgets.QHBoxLayout()
         scroll_layout.addLayout(button_layout)
-
         video_button = QtWidgets.QPushButton("Open Video")
-        video_button.clicked.connect(self.video_player)
+        video_button.clicked.connect(self.open_video_window)
         button_layout.addWidget(video_button)
 
         form_button = QtWidgets.QPushButton("Open Form")
-        form_button.clicked.connect(self.form)
+        form_button.clicked.connect(self.open_form_window)
         button_layout.addWidget(form_button)
 
         fetch_button = QtWidgets.QPushButton("Get Data")
-        fetch_button.clicked.connect(self.fetch)
+        fetch_button.clicked.connect(self.fetch_data)
         button_layout.addWidget(fetch_button)
 
     def pil_to_qt_image(self, pil_image):
-        """ Convert a PIL image to QImage. """
+        """Convert a PIL image to QImage."""
         with io.BytesIO() as buffer:
             pil_image.save(buffer, format="PNG")
             buffer.seek(0)
@@ -90,20 +91,23 @@ class EndoscopyForm(QtWidgets.QWidget):
             q_image.loadFromData(buffer.getvalue())
         return q_image
 
-    def video_player(self):
-        subprocess.Popen(['python', 'video.py'])
+    def open_video_window(self):
+        self.new_form_window = LiveMediaDisplay()
+        self.new_form_window.show()     
 
-    def fetch(self):
-        subprocess.Popen(['python', 'fetch.py'])
+    def open_form_window(self):
+        self.new_form_window = EndoscopyForm()
+        self.new_form_window.show()
 
-    def form(self):
-        subprocess.Popen(['python', 'form.py'])
-
+    def fetch_data(self):
+        self.new_fetch_window = MainWindow()
+        self.new_fetch_window.show()
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication([])
-
-    window = EndoscopyForm()
-    window.show()
-
-    app.exec_()
+    try:
+        app = QtWidgets.QApplication([])
+        home_window = Homewindow()
+        home_window.show()
+        app.exec_()  # Start the event loop
+    except Exception as e:
+        print(f"An error occurred in the main application: {e}")

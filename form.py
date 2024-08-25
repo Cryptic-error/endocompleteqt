@@ -306,8 +306,6 @@ class EndoscopyForm(QtWidgets.QMainWindow):
 
 
 
-    
-
     def generate_pdf(self):
         pdf = FPDF()
         pdf.add_page()
