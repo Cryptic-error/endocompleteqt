@@ -305,40 +305,67 @@ class EndoscopyForm(QtWidgets.QMainWindow):
                 self.picture4_label.setPixmap(q_image)
 
 
-
     def generate_pdf(self):
         pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=10)
         pdf.add_page()
 
         # Set header image
-        header_image_path = "subha swastik.jpg"  # Path to the header image
+        header_image_path = "subha swastik.jpg"
         if os.path.exists(header_image_path):
-            pdf.image(header_image_path, x=10, y=10, w=50)  # Adjust x, y, and w as needed
+            pdf.image(header_image_path, x=50, y=5, w=30,h=30)
 
         # Set title
-        pdf.set_font("Arial", 'B', 16)
-        pdf.cell(0, 10, "Endoscopy Report", 0, 1, 'C')
-        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(0, 8, "Endoscopy Report", 0, 1, 'C',)
+        pdf.ln(3)
 
         # Add header text
-        pdf.set_font("Arial", 'B', 12)
-        pdf.cell(0, 10, "Subha Swastik Hospital PVT LTD", 0, 1, 'C')
-        pdf.set_font("Arial", 'I', 10)
-        pdf.cell(0, 10, "Bardibas-14, Mahottari", 0, 1, 'C')
-        pdf.cell(0, 10, "Report of Sigmoidoscopy/Colonoscopy", 0, 1, 'C')
-        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 8)
+        pdf.cell(0, 6, "Subha Swastik Hospital PVT LTD", 0, 1, 'C')
+        pdf.set_font("Arial", 'I', 6)
+        pdf.cell(0, 6, "Bardibas-14, Mahottari", 0, 1, 'C')
+        pdf.cell(0, 6, "Report of Sigmoidoscopy/Colonoscopy", 0, 1, 'C')
+        pdf.ln(5)
 
-        # Add form data
-        pdf.set_font("Arial", size=12)
+        # Add form data (Bill No, Name, Age on the same row)
+        pdf.set_font("Arial", size=8)
+        
+        # Add Date on the right
+        pdf.cell(150, 6, "", border=0)
+        pdf.cell(20, 6, "Date:", border=1)
+        pdf.cell(25, 6, self.entry_date.text(), border=1, ln=True)
+        pdf.ln(3)
+
+        # Adjust the width of Bill No, Name, and Age fields
+        pdf.cell(25, 6, "Bill No:", border=1)
+        pdf.cell(30, 6, self.entry_bill_no.text(), border=1)
+        pdf.cell(5, 6, "", border=0)
+        
+        pdf.cell(15, 6, "Name:", border=1)
+        pdf.cell(60, 6, self.entry_name.text(), border=1)
+        pdf.cell(5, 6, "", border=0)
+        
+        pdf.cell(10, 6, "Age:", border=1)
+        pdf.cell(20, 6, self.entry_age.text(), border=1, ln=True)
+        pdf.ln(3)
+
+        # Add (Sex, Phone No, Referred By) slightly below the header
+        pdf.cell(20, 6, "Sex:", border=1)
+        pdf.cell(20, 6, self.sex_var.currentText(), border=1)
+        pdf.cell(5, 6, "", border=0)
+        
+        pdf.cell(25, 6, "Phone No:", border=1)
+        pdf.cell(35, 6, self.entry_phone_no.text(), border=1)
+        pdf.cell(5, 6, "", border=0)
+        
+        pdf.cell(30, 6, "Referred By:", border=1)
+        pdf.cell(35, 6, self.entry_referred_by.text(), border=1, ln=True)
+        pdf.ln(3)
+
+        # Add remaining form data in one column
         form_data = {
-            'Bill No': self.entry_bill_no.text(),
-            'Name': self.entry_name.text(),
-            'Age': self.entry_age.text(),
-            'Sex': self.sex_var.currentText(),
-            'Phone No': self.entry_phone_no.text(),
-            'Referred By': self.entry_referred_by.text(),
             'Indication': self.entry_indication.toPlainText(),
-            'Date': self.entry_date.text(),
             'Anus': self.anus_var.currentText(),
             'Rectum': self.entry_rectum.text(),
             'Sigmoid Colon': self.entry_sigmoid_colon.text(),
@@ -352,30 +379,25 @@ class EndoscopyForm(QtWidgets.QMainWindow):
         }
 
         pdf.set_fill_color(200, 220, 255)
-        col_width = pdf.get_string_width('Comments Procedure:') + 10
+        col_width = max(pdf.get_string_width(f"{key}:") for key in form_data.keys()) + 10
 
         for key, value in form_data.items():
-            # Check if adding this content will overflow the page
-            if pdf.get_y() > 270 - 10:  # Adjust the threshold based on your layout needs
-                pdf.add_page()
-            pdf.cell(col_width, 10, f"{key}:", border=1, fill=True)
-            pdf.cell(0, 10, value, border=1, ln=True)
+            pdf.cell(col_width, 6, f"{key}:", border=1, fill=True)
+            pdf.multi_cell(0, 6, value, border=1)  # multi_cell to handle long text wrapping
+            pdf.ln(2)
 
-        # Construct the folder name and path with underscores instead of spaces
+        # Add the signature image with label
         folder_name = f"{self.entry_name.text().replace(' ', '_')}{self.entry_bill_no.text()}"
         signature_path = os.path.join('saved_images', folder_name, 'signature.jpg')
-        print(signature_path)
 
-        # Add the signature image
         if os.path.exists(signature_path):
-            # Check if adding this image will overflow the page
-            if pdf.get_y() + 60 > 270:  # Adjust based on the height of the image
-                pdf.add_page()
-            pdf.ln(10)  # Add a line break before the image
-            pdf.image(signature_path, x=10, y=pdf.get_y(), w=100)
-            pdf.ln(60)  # Add some space after the image
+            pdf.ln(3)
+            pdf.set_font("Arial", 'B', 10)
+            pdf.cell(0, 6, "Signature:", ln=True)
+            pdf.image(signature_path, x=10, y=pdf.get_y(), w=50, h=20)  # Reduced width and height
+            pdf.ln(22)
 
-        # Add the four images
+        # Add the four images with labels
         image_paths = [
             os.path.join('saved_images', folder_name, 'picture1.jpg'),
             os.path.join('saved_images', folder_name, 'picture2.jpg'),
@@ -383,24 +405,25 @@ class EndoscopyForm(QtWidgets.QMainWindow):
             os.path.join('saved_images', folder_name, 'picture4.jpg')
         ]
 
-        for image_path in image_paths:
+        pdf.set_font("Arial", 'B', 10)
+        pdf.cell(0, 6, "Pictures:", ln=True)
+        pdf.ln(3)
+
+        for i, image_path in enumerate(image_paths):
             if os.path.exists(image_path):
-                # Check if adding this image will overflow the page
-                if pdf.get_y() + 60 > 270:  # Adjust based on the height of the image
-                    pdf.add_page()
-                pdf.ln(10)  # Add a line break before the image
-                pdf.image(image_path, x=10, y=pdf.get_y(), w=100)
-                pdf.ln(150)  # Add some space after each image
+                if i % 2 == 0:
+                    pdf.ln(3)
+                x_position = 10 + (i % 2) * 95
+                pdf.image(image_path, x=x_position, y=pdf.get_y(), w=65, h=40)
+                if i % 2 == 1:
+                    pdf.ln(45)
 
         # Save the PDF
-        output_path = os.path.join('saved_pdfs', f"{self.entry_bill_no.text()}.pdf")
-        pdf.output(output_path)
-
-        # Save PDF with a properly formatted file name
         pdf_output_path = os.path.join('saved_pdfs', f"{self.entry_name.text().replace(' ', '_')}_endoscopy_form.pdf")
         os.makedirs(os.path.dirname(pdf_output_path), exist_ok=True)
         pdf.output(pdf_output_path)
         QtWidgets.QMessageBox.information(self, "PDF Generated", f"PDF saved as {pdf_output_path}")
+
 
 if __name__ == "__main__":
     import sys

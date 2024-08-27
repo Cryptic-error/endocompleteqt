@@ -97,6 +97,7 @@ class Homewindow(QtWidgets.QWidget):
 
     def open_form_window(self):
         self.new_form_window = EndoscopyForm()
+        
         self.new_form_window.show()
 
     def fetch_data(self):
